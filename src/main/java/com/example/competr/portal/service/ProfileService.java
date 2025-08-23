@@ -6,5 +6,5 @@ import org.springframework.stereotype.Service;
 @Service
 public interface ProfileService {
     public Profile createOrUpdateProfile(Profile profile);
-    public Profile getProfileByUserId(long userId);
+    public Profile getProfileByUserName(String userName);
 }

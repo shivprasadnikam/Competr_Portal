@@ -13,7 +13,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final ProfileRepository profileRepository;
 
     public Profile createOrUpdateProfile(Profile profile) {
-        Profile existingProfile = profileRepository.findByUserId(profile.getUserId());
+        Profile existingProfile = profileRepository.findByUserName(profile.getUserName());
         if (existingProfile != null) {
             existingProfile.setUserName(profile.getUserName());
             existingProfile.setRanking(profile.getRanking());
@@ -23,8 +23,8 @@ public class ProfileServiceImpl implements ProfileService {
         return profileRepository.save(profile);
     }
 
-    public Profile getProfileByUserId(long userId) {
-        return profileRepository.findByUserId(userId);
+    public Profile getProfileByUserName(String userName){
+        return profileRepository.findByUserName(userName);
     }
 }
 

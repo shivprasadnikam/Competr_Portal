@@ -3,6 +3,7 @@ package com.example.competr.portal.controller;
 import com.example.competr.portal.entity.User;
 import com.example.competr.portal.request.LoginRequest;
 import com.example.competr.portal.response.LoginResponse;
+import com.example.competr.portal.response.RegisterUserResponse;
 import com.example.competr.portal.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,15 +18,16 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody User user) {
+    public RegisterUserResponse register(@RequestBody User user) {
         log.info("Received registration request: phoneNumber={}, userName={}", user.getPhoneNumber(), user.getUserName());
+        RegisterUserResponse registerUserResponse = new RegisterUserResponse();
         try {
-            User savedUser = userService.registerUser(user);
-            log.info("Registration successful: userId={}, phoneNumber={}", savedUser.getId(), savedUser.getPhoneNumber());
-            return ResponseEntity.ok(savedUser);
+             registerUserResponse = userService.registerUser(user);
+            log.info("Registration successful: userName={}, phoneNumber={}",user.getUserName(), user.getPhoneNumber());
+            return registerUserResponse;
         } catch (Exception e) {
             log.error("Registration failed for phoneNumber={}: {}", user.getPhoneNumber(), e.getMessage());
-            return ResponseEntity.status(500).build();
+            return registerUserResponse;
         }
     }
 

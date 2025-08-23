@@ -1,14 +1,17 @@
 package com.example.competr.portal.controller;
 
 import com.example.competr.portal.entity.Profile;
+import com.example.competr.portal.entity.User;
 import com.example.competr.portal.service.ProfileService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/profiles")
 @RequiredArgsConstructor
+@Slf4j
 public class ProfileController {
 
     private final ProfileService profileService;
@@ -18,15 +21,17 @@ public class ProfileController {
         Profile savedProfile = profileService.createOrUpdateProfile(profile);
         return ResponseEntity.ok(savedProfile);
     }
-
-    @GetMapping("/{userId}")
-    public ResponseEntity<Profile> getProfileByUserId(@PathVariable long userId) {
-        Profile profile = profileService.getProfileByUserId(userId);
+    @PostMapping("/userName")
+    public ResponseEntity<Profile> getProfileByUserName(@RequestBody User userName) {
+        log.info("Inside getProfileByUserName with userName: {}", userName.getUserName());
+        Profile profile = profileService.getProfileByUserName(userName.getUserName());
+        log.info("Profile found: {}", profile != null);
         if (profile != null) {
             return ResponseEntity.ok(profile);
         } else {
             return ResponseEntity.notFound().build();
         }
     }
+
 }
 
