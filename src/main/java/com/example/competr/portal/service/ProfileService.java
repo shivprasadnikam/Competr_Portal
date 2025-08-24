@@ -1,10 +1,10 @@
-package com.example.competr.portal.service;
-
-import com.example.competr.portal.entity.Profile;
-import org.springframework.stereotype.Service;
-
-@Service
-public interface ProfileService {
-    public Profile createOrUpdateProfile(Profile profile);
-    public Profile getProfileByUserName(String userName);
-}
+//package com.example.competr.portal.service;
+//
+//import com.example.competr.portal.dto.PlayerDto;
+//import org.springframework.stereotype.Service;
+//
+//@Service
+//public interface ProfileService {
+//    public PlayerDto createOrUpdateProfile(PlayerDto profile);
+//    public PlayerDto getProfileByUserName(String userName);
+//}
