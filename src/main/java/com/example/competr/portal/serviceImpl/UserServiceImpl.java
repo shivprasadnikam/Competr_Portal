@@ -22,7 +22,6 @@ public class UserServiceImpl implements UserService {
 
     private final PlayerRepository playerRepository;
     private final JwtUtil jwtUtil;
-
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Override
@@ -30,7 +29,6 @@ public class UserServiceImpl implements UserService {
         log.info("Registering user with phoneNumber: {}", playerDto.getPhoneNumber());
         RegisterUserResponse registerUserResponse = new RegisterUserResponse();
         try {
-
             Optional<PlayerEntity> existingUser = playerRepository.findByPhoneNumber(playerDto.getPhoneNumber());
             if (existingUser.isPresent()) {
                 registerUserResponse.setStatus(false);
@@ -38,19 +36,22 @@ public class UserServiceImpl implements UserService {
                 return registerUserResponse;
             }
 
-            // Encode password and save new user
+            // Encode password and map DTO → Entity
             playerDto.setPassword(passwordEncoder.encode(playerDto.getPassword()));
-            playerRepository.save(new PlayerEntity());
+            PlayerEntity playerEntity = convertDtoToEntity(playerDto);
+
+            PlayerEntity savedEntity = playerRepository.save(playerEntity);
+
             registerUserResponse.setStatus(true);
-            log.info("User registered successfully with id: {}", playerDto.getId());
+            log.info("User registered successfully with id: {}", savedEntity.getId());
             return registerUserResponse;
         } catch (Exception e) {
+            log.error("User registration failed for phoneNumber: {}, error: {}", playerDto.getPhoneNumber(), e.getMessage(), e);
             registerUserResponse.setStatus(false);
-            log.error("User registration failed for phoneNumber: {}, error: {}", playerDto.getPhoneNumber(), e.getMessage());
-            throw e;
+            registerUserResponse.setErrorMessage("Registration failed due to server error");
+            return registerUserResponse;
         }
     }
-
 
     @Override
     public LoginResponse loginUser(LoginRequest loginRequest) {
@@ -61,31 +62,36 @@ public class UserServiceImpl implements UserService {
         LoginResponse loginResponse = new LoginResponse();
 
         if (userOpt.isPresent()) {
-            PlayerEntity playerDto = userOpt.get();
-            boolean matches = passwordEncoder.matches(loginRequest.getPassword(), playerDto.getPassword());
+            PlayerEntity playerEntity = userOpt.get();
+            boolean matches = passwordEncoder.matches(loginRequest.getPassword(), playerEntity.getPassword());
             log.info("Password match for phoneNumber {}: {}", phoneNumber, matches);
 
             if (matches) {
-                String token = jwtUtil.generateToken(playerDto.getUserName());
-                log.info("Login successful for userId: {}, phoneNumber: {}", playerDto.getId(), phoneNumber);
+                String token = jwtUtil.generateToken(playerEntity.getUserName());
+                log.info("Login successful for userId: {}, phoneNumber: {}", playerEntity.getId(), phoneNumber);
 
-                loginResponse.setUserId(String.valueOf(playerDto.getId()));
+                loginResponse.setUserId(String.valueOf(playerEntity.getId()));
                 loginResponse.setStatus(true);
                 loginResponse.setToken(token);
-                loginResponse.setUserName(playerDto.getUserName());
-                return loginResponse;
+                loginResponse.setUserName(playerEntity.getUserName());
             } else {
                 log.warn("Invalid password for phoneNumber: {}", phoneNumber);
-                loginResponse.setUserId(String.valueOf(playerDto.getId()));
                 loginResponse.setStatus(false);
                 loginResponse.setErrorMessage("Invalid phone number or password");
-                return loginResponse;
             }
         } else {
             log.warn("User not found with phoneNumber: {}", phoneNumber);
             loginResponse.setStatus(false);
             loginResponse.setErrorMessage("Invalid phone number or password");
-            return loginResponse;
         }
+        return loginResponse;
+    }
+
+    private PlayerEntity convertDtoToEntity(PlayerDto dto) {
+        PlayerEntity entity = new PlayerEntity();
+        entity.setUserName(dto.getUserName());
+        entity.setPhoneNumber(dto.getPhoneNumber());
+        entity.setPassword(dto.getPassword());
+        return entity;
     }
 }

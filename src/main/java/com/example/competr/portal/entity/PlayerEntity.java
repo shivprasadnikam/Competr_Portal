@@ -18,29 +18,13 @@ public class PlayerEntity {
 
     @Column(unique = true, nullable = false, length = 50)
     private String userName;
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(unique = true, nullable = false)
     private String password;
-
-    @Column(nullable = false, length = 100)
-    private String name;
 
     private Integer age;
 
-    @Column(length = 50)
-    private String nationality;
-
     private Integer ranking;
 
-    @Column(length = 10)
-    private String gender;
-
-    @Column(length = 100)
-    private String club;
-
-    private LocalDate dateOfBirth;
-
-    @Column(unique = true, length = 100)
-    private String email;
 
     @Column(unique = true, length = 15)
     private String phoneNumber;
