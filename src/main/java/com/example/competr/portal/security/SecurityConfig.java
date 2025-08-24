@@ -23,14 +23,13 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
-                                .csrf(csrf -> csrf.disable())
-                                .cors(cors -> cors.disable())
-                                .authorizeHttpRequests(auth -> auth
-//                                                .requestMatchers("/api/users/register").permitAll()
-                                                .requestMatchers("/api/**").permitAll()
-                                                .requestMatchers("/api/users/login").permitAll()
-                                               // .requestMatchers("/api/**").authenticated()
-                                                .anyRequest().authenticated())
+                        .csrf(csrf -> csrf.disable())
+                        .cors(cors -> cors.disable())
+                        .authorizeHttpRequests(auth -> auth
+                                .requestMatchers("/api/players/register", "/api/players/login").permitAll() // public
+                                .requestMatchers("/api/**").authenticated() // all other /api/** require JWT
+                                .anyRequest().authenticated()
+                        )
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 

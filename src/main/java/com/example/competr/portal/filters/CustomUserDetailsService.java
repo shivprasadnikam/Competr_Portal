@@ -1,9 +1,9 @@
 package com.example.competr.portal.filters;
 
-import com.example.competr.portal.entity.User;
-import com.example.competr.portal.repository.UserRepository;
+import com.example.competr.portal.dto.PlayerDto;
+import com.example.competr.portal.entity.PlayerEntity;
+import com.example.competr.portal.repository.PlayerRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -16,17 +16,17 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final PlayerRepository playerRepository;
 
     @Override
     public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
-        User user = userRepository.findByUserName(userName)
+        PlayerEntity playerDto = playerRepository.findByUserName(userName)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with userName: " + userName));
 
         // Assuming your user is always enabled and has USER role; adjust if you add more fields later
         return new org.springframework.security.core.userdetails.User(
-                user.getPhoneNumber(),
-                user.getPassword(),
+                playerDto.getPhoneNumber(),
+                playerDto.getPassword(),
                 true, // enabled
                 true, // accountNonExpired
                 true, // credentialsNonExpired

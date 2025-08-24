@@ -37,13 +37,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-//        String path = request.getRequestURI();
-//        System.out.println(path);
-//
-//        if (path.equals("api/users/register") || path.equals("/api/users/login")  ) {
-//            chain.doFilter(request, response);
-//            return;
-//        }
+        String path = request.getRequestURI();
+        System.out.println(path);
+
+
+        if (path.equals("/api/players/register") || path.equals("/api/players/login")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
         System.out.println("[JwtAuthFilter] Request URI: " + request.getRequestURI());
         System.out.println("[JwtAuthFilter] Authorization header: " + (authHeader != null ? "Present" : "NULL"));
