@@ -1,4 +1,4 @@
-package com.example.competr.portal.filters;
+package com.example.competr.portal.filter;
 
 import com.example.competr.portal.dto.PlayerDto;
 import com.example.competr.portal.entity.PlayerEntity;

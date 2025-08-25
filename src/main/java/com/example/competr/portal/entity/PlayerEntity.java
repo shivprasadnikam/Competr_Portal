@@ -1,43 +1,49 @@
 package com.example.competr.portal.entity;
 
-
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "players")
 public class PlayerEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(name = "user_name", unique = true, nullable = false, length = 50)
     private String userName;
-    @Column(unique = true, nullable = false)
-    private String password;
 
-    private Integer age;
-
-    private Integer ranking;
-
-
-    @Column(unique = true, length = 15)
+    @Column(name = "phone_number", unique = true, nullable = false, length = 15)
     private String phoneNumber;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "password", nullable = false)
+    private String password;
 
-    @Column(nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @Column(name = "age")
+    private Integer age;
 
+    @Column(name = "ranking")
+    private Integer ranking;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
 
     @PreUpdate
-    public void preUpdate() {
+    protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
 }
