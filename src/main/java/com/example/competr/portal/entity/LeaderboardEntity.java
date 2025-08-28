@@ -14,8 +14,11 @@ public class LeaderboardEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "player_id", unique = true, nullable = false)
+    private String playerId;
+    
     @OneToOne(optional = false)
-    @JoinColumn(name = "player_id", unique = true)
+    @JoinColumn(name = "player_id", referencedColumnName = "user_name", insertable = false, updatable = false)
     private PlayerEntity player;
 
     @Column(nullable = false)

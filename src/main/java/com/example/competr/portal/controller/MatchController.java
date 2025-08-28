@@ -1,123 +1,87 @@
 package com.example.competr.portal.controller;
 
 import com.example.competr.portal.dto.*;
-import com.example.competr.portal.entity.MatchEntity;
-import com.example.competr.portal.repository.MatchRepository;
-import com.example.competr.portal.repository.PlayerRepository;
+import com.example.competr.portal.service.MatchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/match")
 public class MatchController {
 
     @Autowired
-    private MatchRepository matchRepository;
-
-    @Autowired
-    private PlayerRepository playerRepository;
+    private MatchService matchService;
 
     @PostMapping("/findPlayer")
-    public ResponseEntity<List<String>> findPlayer(@RequestBody FindPlayerRequest request) {
+    public ResponseEntity<?> findPlayer(@RequestBody FindPlayerRequest request) {
         try {
-            List<String> players = playerRepository.findUserNamesByUserNameContainingIgnoreCase(request.getUserName());
+            if (!isAuthenticated()) {
+                return createErrorResponse("Authentication required", 401);
+            }
+            
+            List<String> players = matchService.findPlayersByUserName(request.getUserName());
             return ResponseEntity.ok(players);
         } catch (Exception e) {
-            return ResponseEntity.ok(new ArrayList<>());
+            return createErrorResponse("Failed to find players: " + e.getMessage(), 500);
         }
     }
 
     @PostMapping("/create")
     public ResponseEntity<Map<String, Object>> createMatch(@RequestBody CreateMatchRequest request) {
         try {
-            String matchId = "match_" + System.currentTimeMillis();
+            if (!isAuthenticated()) {
+                return createErrorResponse("Authentication required", 401);
+            }
             
-            MatchEntity match = new MatchEntity();
-            match.setMatchId(matchId);
-            match.setPlayers(request.getPlayerIds());
-            match.setMatchType(MatchEntity.MatchType.valueOf(request.getMatchType()));
-            match.setStatus(MatchEntity.MatchStatus.CREATED);
-            match.setScores(new ArrayList<>(Collections.nCopies(request.getPlayerIds().size(), 0)));
-            
-            matchRepository.save(match);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("matchId", matchId);
-            response.put("status", "created");
-            response.put("players", request.getPlayerIds());
-            response.put("matchType", request.getMatchType());
-            
+            Map<String, Object> response = matchService.createMatch(request);
             return ResponseEntity.ok(response);
             
+        } catch (IllegalArgumentException e) {
+            return createErrorResponse(e.getMessage(), 400);
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("not found")) {
+                return createErrorResponse(e.getMessage(), 404);
+            }
+            return createErrorResponse("Failed to create match: " + e.getMessage(), 500);
         } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("errorMessage", "Failed to create match: " + e.getMessage());
-            return ResponseEntity.ok(errorResponse);
+            return createErrorResponse("Failed to create match: " + e.getMessage(), 500);
         }
     }
 
     @PostMapping("/result")
     public ResponseEntity<Map<String, Object>> saveMatchResult(@RequestBody MatchResultRequest request) {
         try {
-            MatchEntity match = matchRepository.findById(request.getMatchId())
-                .orElse(new MatchEntity());
-            
-            match.setMatchId(request.getMatchId());
-            match.setPlayers(request.getPlayers());
-            match.setScores(request.getScores());
-            match.setWinner(request.getWinner());
-            match.setMatchType(MatchEntity.MatchType.valueOf(request.getMatchType()));
-            match.setScoreTarget(request.getScoreTarget());
-            match.setDuration(request.getDuration());
-            match.setStartTime(request.getStartTime());
-            match.setEndTime(request.getEndTime());
-            match.setStatus(MatchEntity.MatchStatus.COMPLETED);
-            
-            matchRepository.save(match);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("matchId", request.getMatchId());
-            
+            Map<String, Object> response = matchService.saveMatchResult(request);
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("errorMessage", "Failed to save match result: " + e.getMessage());
-            return ResponseEntity.ok(errorResponse);
+            return createErrorResponse("Failed to save match result: " + e.getMessage(), 500);
         }
     }
 
     @GetMapping("/history")
-    public ResponseEntity<List<MatchHistoryResponse>> getMatchHistory(
+    public ResponseEntity<?> getMatchHistory(
             @RequestParam(required = false) String playerId,
-            @RequestParam(required = false, defaultValue = "50") Integer limit) {
+            @RequestParam(required = false, defaultValue = "50") Integer limit,
+            @RequestParam(required = false, defaultValue = "0") Integer page) {
         
         try {
-            List<MatchEntity> matches;
-            
-            if (playerId != null && !playerId.isEmpty()) {
-                matches = matchRepository.findByPlayersContaining(playerId);
-            } else {
-                matches = matchRepository.findAllOrderByCreatedAtDesc();
+            if (!isAuthenticated()) {
+                return createErrorResponse("Authentication required", 401);
             }
             
-            List<MatchHistoryResponse> response = matches.stream()
-                .limit(limit)
-                .map(this::convertToHistoryResponse)
-                .collect(Collectors.toList());
+            String currentUser = getCurrentUser();
+            Map<String, Object> response = matchService.getMatchHistory(playerId, limit, page, currentUser);
             
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            return ResponseEntity.ok(new ArrayList<>());
+            return createErrorResponse("Failed to fetch match history: " + e.getMessage(), 500);
         }
     }
 
@@ -127,55 +91,37 @@ public class MatchController {
             @RequestBody UpdateScoreRequest request) {
         
         try {
-            Optional<MatchEntity> matchOpt = matchRepository.findById(matchId);
-            
-            if (matchOpt.isEmpty()) {
-                Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("status", "error");
-                errorResponse.put("errorMessage", "Match not found");
-                return ResponseEntity.ok(errorResponse);
+            if (!isAuthenticated()) {
+                return createErrorResponse("Authentication required", 401);
             }
             
-            MatchEntity match = matchOpt.get();
-            match.setScores(request.getScores());
-            match.setServing(request.getServing());
-            match.setServesLeft(request.getServesLeft());
-            match.setStatus(MatchEntity.MatchStatus.IN_PROGRESS);
-            
-            matchRepository.save(match);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "success");
-            response.put("matchId", matchId);
-            response.put("scores", request.getScores());
-            
+            Map<String, Object> response = matchService.updateMatchScore(matchId, request);
             return ResponseEntity.ok(response);
             
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("not found")) {
+                return createErrorResponse(e.getMessage(), 404);
+            }
+            return createErrorResponse("Failed to update score: " + e.getMessage(), 500);
         } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("status", "error");
-            errorResponse.put("errorMessage", "Failed to update score: " + e.getMessage());
-            return ResponseEntity.ok(errorResponse);
+            return createErrorResponse("Failed to update score: " + e.getMessage(), 500);
         }
     }
 
-    private MatchHistoryResponse convertToHistoryResponse(MatchEntity match) {
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-        
-        String date = match.getCreatedAt() != null ? match.getCreatedAt().format(dateFormatter) : "";
-        String time = match.getCreatedAt() != null ? match.getCreatedAt().format(timeFormatter) : "";
-        String duration = match.getDuration() != null ? match.getDuration() + " min" : "";
-        
-        return new MatchHistoryResponse(
-            match.getMatchId(),
-            date,
-            time,
-            match.getPlayers(),
-            match.getScores(),
-            match.getMatchType().toString(),
-            duration,
-            match.getWinner()
-        );
+    private boolean isAuthenticated() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.isAuthenticated();
+    }
+    
+    private String getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getName();
+    }
+    
+    private ResponseEntity<Map<String, Object>> createErrorResponse(String message, int status) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("status", "error");
+        errorResponse.put("errorMessage", message);
+        return ResponseEntity.status(status).body(errorResponse);
     }
 }

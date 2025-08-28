@@ -24,6 +24,18 @@ public class MatchEntity {
     @Column(name = "player_id")
     private List<String> players;
     
+    @Column(name = "player1_id", nullable = false)
+    private String player1Id;
+    
+    @Column(name = "player2_id")
+    private String player2Id;
+    
+    @Column(name = "player3_id")
+    private String player3Id;
+    
+    @Column(name = "player4_id")
+    private String player4Id;
+    
     @ElementCollection
     @CollectionTable(name = "match_scores", joinColumns = @JoinColumn(name = "match_id"))
     @Column(name = "score")
@@ -64,6 +76,9 @@ public class MatchEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
+    @Column(name = "match_date", nullable = false)
+    private LocalDateTime matchDate;
+    
     public enum MatchType {
         SINGLES, DOUBLES
     }
@@ -76,8 +91,18 @@ public class MatchEntity {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (matchDate == null) {
+            matchDate = LocalDateTime.now();
+        }
         if (status == null) {
             status = MatchStatus.CREATED;
+        }
+        // Set individual player fields from players list
+        if (players != null && !players.isEmpty()) {
+            player1Id = players.get(0);
+            if (players.size() > 1) player2Id = players.get(1);
+            if (players.size() > 2) player3Id = players.get(2);
+            if (players.size() > 3) player4Id = players.get(3);
         }
     }
     

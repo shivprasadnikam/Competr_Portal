@@ -9,12 +9,11 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MatchHistoryResponse {
-    private String id;
-    private String date;
-    private String time;
+    private String matchId;
     private List<String> players;
     private List<Integer> scores;
-    private String matchType;
-    private String duration;
     private Integer winner;
+    private String matchType;
+    private Integer duration;
+    private String matchDate;
 }
